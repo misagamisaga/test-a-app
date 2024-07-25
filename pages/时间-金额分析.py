@@ -8,25 +8,24 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 
-# 时间-金额分析
-# 类别-金额分析（【类别包括第几周、周几、小时】饼图、柱状图-(箱型图、扰动散点图、小提琴图)，笔数、总价、均价、中位数、众数、最大值）
-# 消费日历
-# 金额占比分析（分布直方图、柱状图、大中小金额的饼图，可选按类别切片）
+#%% 按照时间重整数据
 
 bill_ori = pd.read_excel('bill_ok_proc.xlsx')
 
-st.header("时间-金额分析")
-
-date_choose = st.date_input(
-    label = "选择分析日期",
-    value = (
-        datetime.date(2024, 6, 30), 
-        datetime.date(2024, 7, 25)
-    ),
-    min_value = datetime.date(2024, 6, 30),
-    max_value = datetime.date(2024, 7, 25),
-    format="YYYY.MM.DD",
-)
+fig_header_col1, fig_header_col2 = st.columns([3,2])
+with fig_header_col1:
+    st.header("时间-金额分析")
+with fig_header_col2:
+    date_choose = st.date_input(
+        label = "选择分析日期",
+        value = (
+            datetime.date(2024, 6, 30), 
+            datetime.date(2024, 7, 25)
+        ),
+        min_value = datetime.date(2024, 6, 30),
+        max_value = datetime.date(2024, 7, 25),
+        format="YYYY.MM.DD",
+    )
 
 # st.write(date_choose)
 
@@ -54,19 +53,18 @@ for item in set(bill[col].values):
 
 st.markdown("---")
 
-# 控件
+#%% 控件
+
 fig1_cho1, fig1_cho2 = st.columns(2)
 with fig1_cho1:
     fig1_plot = st.selectbox(
         "选择图表类型",
-        ("折线图",)
-        # ("日期", "相对日", "星期", "相对时")
+        ("折线图", "散点图", "消费日历", "类别图")
     )
     
     fig1_for0 = st.selectbox(
         "选择查看项",
         ("总计", "项目", "分类", "商家")
-        # ("余额", "金额", "累计金额", "项目累计金额", "分类累计金额", "商家累计金额")
     )
     
     if fig1_for0 != "总计":
@@ -93,7 +91,7 @@ with fig1_cho2:
     fig1cho2_cho1, fig1cho2_cho2 = st.columns([1,2])
     fig1cho2_cho3, fig1cho2_cho4 = st.columns(2)
     with fig1cho2_cho1:
-        fig1_check0 = st.checkbox("仅支出", value=True)#value_check_fig1)
+        fig1_check0 = st.checkbox("仅支出", value=True)
     if fig1_for0 != "总计":
         with fig1cho2_cho2:
             fig1_check_num = st.checkbox("金额排序（否则按数量）", value=True)
@@ -113,7 +111,8 @@ with fig1_cho2:
         fig1_check3 = False
         fig1_check4 = False
 
-# 数据二次处理
+#%% 数据二次处理
+
 if fig1_check0:
     bill_fig1 = bill[bill["类型"] == "支出"]
 else:
@@ -140,7 +139,7 @@ else:
     fig1_trans_rate2 = 1
     fig1_label_add = ""
 
-# 正式画图
+#%% 正式画图
 if fig1_for0 == "总计":
     fig1 = px.line(bill_fig1_basic, x="日期", y=fig1_axis2)
 else:
@@ -188,4 +187,4 @@ if fig1_check3:
         )
     )
 fig1.update_layout(template="ggplot2")
-st.plotly_chart(fig1, use_container_width=False)
+st.plotly_chart(fig1, use_container_width=True)
