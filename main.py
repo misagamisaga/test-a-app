@@ -65,6 +65,13 @@ with fig1_cho1:
         ("总计", "项目", "分类", "商家")
         # ("余额", "金额", "累计金额", "项目累计金额", "分类累计金额", "商家累计金额")
     )
+    if fig1_for0 != "总计":
+        fig1_top_number = st.number_input(
+            "显示条数",
+            value=min(len(set(bill[fig1_for0].values)), 5),
+            min_value=1,
+            max_value=len(set(bill[fig1_for0].values)) 
+        )
 
 if fig1_for0 == "总计":
     fig1_for = None
@@ -79,13 +86,16 @@ with fig1_cho2:
         "选择时间轴",
         fig1_tuple_axis2
     )
-    value_check_fig1 = True if fig1_axis2 == "余额" else False
-    fig1_check0 = st.checkbox("仅支出", value=value_check_fig1)
+    # value_check_fig1 = True if fig1_axis2 == "余额" else False
+    fig1_check0 = st.checkbox("仅支出", value=True)#value_check_fig1)
+    
     if fig1_for0 != "总计":
+        fig1_check_num = st.checkbox("依据金额排序(否则依数量排序)", value=True)
         fig1_check1 = st.checkbox("显示总余额")
         fig1_check2 = st.checkbox("显示总金额")
         fig1_check3 = st.checkbox("显示总累计金额")
     else:
+        # fig1_check_num = False
         fig1_check1 = False
         fig1_check2 = False
         fig1_check3 = False
@@ -95,17 +105,32 @@ if fig1_check0:
 else:
     bill_fig1 = bill
 
-if fig1_for0 == "总计":
-    fig1 = px.line(bill_fig1, x="日期", y=fig1_axis2)
+if fig1_for0 != "总计":
+    if fig1_check_num:
+        fig1_num_ref_index = bill.pivot_table(index=fig1_for, values="金额", aggfunc="sum").sort_values(by="金额", ascending=False).index.tolist()
+    else:
+        fig1_num_ref_index = bill[fig1_for].value_counts().index.tolist()
+    
+    bill_fig1_basic = bill_fig1[bill_fig1[fig1_for].isin(fig1_num_ref_index[:fig1_top_number+1])]
 else:
-    fig1 = px.line(bill_fig1, x="日期", y=fig1_axis2, color=fig1_for)
+    bill_fig1_basic = bill_fig1
+
+if fig1_for0 == "总计":
+    fig1 = px.line(bill_fig1_basic, x="日期", y=fig1_axis2)
+else:
+    fig1 = px.line(bill_fig1_basic, x="日期", y=fig1_axis2, color=fig1_for)
 if fig1_check1:
     fig1.add_trace(
         go.Scatter(
             x=bill_fig1["日期"],
             y=bill_fig1["余额"],
             name="余额",
-            mode="lines"
+            mode="lines", 
+            line=dict(
+                color="blue", 
+                width=2, 
+                dash="dot" # "dash"
+            )
         )
     )
 if fig1_check2:
@@ -114,7 +139,12 @@ if fig1_check2:
             x=bill_fig1["日期"],
             y=bill_fig1["金额"],
             name="金额",
-            mode="lines"
+            mode="lines", 
+            line=dict(
+                color="green", 
+                width=2, 
+                dash="dot" # "dash"
+            )
         )
     )
 if fig1_check3:
@@ -123,8 +153,13 @@ if fig1_check3:
             x=bill_fig1["日期"],
             y=bill_fig1["累计金额"],
             name="累计金额",
-            mode="lines"
+            mode="lines", 
+            line=dict(
+                color="red", 
+                width=2, 
+                dash="dot" # "dash"
+            )
         )
     )
-
+fig1.update_layout(template="ggplot2")
 st.plotly_chart(fig1, use_container_width=False)
