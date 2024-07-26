@@ -4,6 +4,7 @@ import numpy as np
 import proplot
 import datetime
 import math
+import scipy
 
 import streamlit as st
 import plotly.express as px
@@ -71,28 +72,39 @@ with fig1_cho1:
         "选择图表类型",
         ("折线图", "直方图", "散点图", "消费日历", "类别图")
     )
-    
-    fig1_for0 = st.selectbox(
-        "选择查看项",
-        ("总计", "项目", "分类", "商家")
-    )
-    
-    # 横轴选择
-    if fig1_plot in ["直方图", "散点图"]:
-        fig1_axisx0 = st.selectbox(
-            "选择横轴",
-            ("全视图", "月视图", "周视图", "日视图")
-        )
-        dict_axisx = {"全视图":"日期", "月视图":"相对月内日", "周视图":"相对星期天", "日视图":"相对时"}
-        fig1_axisx = dict_axisx[fig1_axisx0]
+    if fig1_plot != "消费日历":
 
-    # 显示条数
-    if fig1_for0 != "总计":
-        fig1_top_number = st.number_input(
-            "显示条数",
-            value=min(len(set(bill[fig1_for0].values)), 5),
-            min_value=1,
-            max_value=len(set(bill[fig1_for0].values)) 
+        fig1_for0 = st.selectbox(
+            "选择查看项",
+            ("总计", "项目", "分类", "商家")
+        )
+        
+        # 横轴选择
+        if fig1_plot in ["直方图", "散点图"]:
+            fig1_axisx0 = st.selectbox(
+                "选择横轴",
+                ("全视图", "月视图", "周视图", "日视图")
+            )
+            dict_axisx = {"全视图":"日期", "月视图":"相对月内日", "周视图":"相对星期天", "日视图":"相对时"}
+            fig1_axisx = dict_axisx[fig1_axisx0]
+
+        # 显示条数
+        if fig1_for0 != "总计":
+            fig1_top_number = st.number_input(
+                "显示条数",             
+                value=min(len(set(bill[fig1_for0].values)), 5),
+                min_value=1,
+                max_value=len(set(bill[fig1_for0].values)) 
+            )
+    else:
+        fig1_cal = st.selectbox(
+            "选择日历类型",
+            ("日 - 时", "日 (星期中) - 周", "日 (月中) - 月")
+        )
+        fig1_for0 = "总计"
+        cal_choose = st.selectbox(
+            "选择数据类型",
+            ("总价", "均价", "数量", "中位数", "众数", "最大值")
         )
 
 # 金额项选择, 预备fig1_cho2
@@ -137,27 +149,28 @@ with fig1_cho2:
     fig1cho2_cho3, fig1cho2_cho4 = st.columns(2)
     with fig1cho2_cho1:
         fig1_check0 = st.checkbox("仅支出", value=True)
-    
-    if fig1_for0 != "总计":
-        with fig1cho2_cho2:
-            fig1_check_num = st.checkbox("金额排序（否则按数量）", value=True)
-        # 仅折线图且不为总计: 是否显示总的折线, 是否放缩显示
-        if fig1_plot == "折线图":
-            with fig1cho2_cho3:
-                fig1_check1 = st.checkbox("显示总余额")
-                fig1_check2 = st.checkbox("显示总金额")
-                fig1_check3 = st.checkbox("显示总累计金额")
-            with fig1cho2_cho4:
-                if fig1_check1 or fig1_check2 or fig1_check3:
-                    fig1_check4 = st.checkbox("放缩显示", value=True)
-                else:
-                    fig1_check4 = False
-    else:
-        # fig1_check_num = False
-        fig1_check1 = False
-        fig1_check2 = False
-        fig1_check3 = False
-        fig1_check4 = False
+    if fig1_plot != "消费日历":
+        if fig1_for0 != "总计":
+            with fig1cho2_cho2:
+                fig1_check_num = st.checkbox("金额排序（否则按数量）", value=True)
+            # 仅折线图且不为总计: 是否显示总的折线, 是否放缩显示
+            if fig1_plot == "折线图":
+                with fig1cho2_cho3:
+                    fig1_check1 = st.checkbox("显示总余额")
+                    fig1_check2 = st.checkbox("显示总金额")
+                    fig1_check3 = st.checkbox("显示总累计金额")
+                with fig1cho2_cho4:
+                    if fig1_check1 or fig1_check2 or fig1_check3:
+                        fig1_check4 = st.checkbox("放缩显示", value=True)
+                    else:
+                        fig1_check4 = False
+        else:
+            # fig1_check_num = False
+            fig1_check1 = False
+            fig1_check2 = False
+            fig1_check3 = False
+            fig1_check4 = False
+
 
 #%% 数据二次处理
 
@@ -265,3 +278,28 @@ elif fig1_plot == "散点图":
     )
     fig1_hist.update_layout(template="ggplot2")
     st.plotly_chart(fig1_hist, use_container_width=True)
+elif fig1_plot == "消费日历":
+    dict_calender = {
+        "日 - 时":("时", "相对日"), 
+        "日 (星期中) - 周":("星期", "周"), 
+        "日 (月中) - 月":("日", "月")
+    }
+    calender_input = dict_calender[fig1_cal]
+    def get_mode(x):
+        return scipy.stats.mode(x)[0]
+    dict_proc = {"数量":"count", "总价":"sum", 
+                "均价":"mean", "中位数":"median", 
+                "众数":get_mode, "最大值":"max"}
+
+    calender_df = bill_fig1_basic.pivot_table(
+        values='金额', index=calender_input[1], 
+        columns=calender_input[0], aggfunc=dict_proc[cal_choose]
+    ).fillna(0)
+    fig1_heatmap = px.imshow(
+        calender_df
+    )
+    fig1_heatmap.update_xaxes(side="top")
+    fig1_heatmap.update_layout(template="ggplot2")
+    st.plotly_chart(fig1_heatmap, use_container_width=True)
+elif fig1_plot == "类别图":
+    pass
