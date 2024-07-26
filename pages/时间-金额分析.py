@@ -11,8 +11,6 @@ import plotly.graph_objects as go
 
 #%% 按照时间重整数据
 
-# 直方图 [日期/月日/周天/小时]
-# 散点图: [日期/周天/小时] - 金额, 可以染色
 # 类别图：以第几周、周几、小时为列类别
 
 
@@ -68,6 +66,7 @@ st.markdown("---")
 
 fig1_cho1, fig1_cho2 = st.columns(2)
 with fig1_cho1:
+
     fig1_plot = st.selectbox(
         "选择图表类型",
         ("折线图", "直方图", "散点图", "消费日历", "类别图")
@@ -78,6 +77,7 @@ with fig1_cho1:
         ("总计", "项目", "分类", "商家")
     )
     
+    # 横轴选择
     if fig1_plot in ["直方图", "散点图"]:
         fig1_axisx0 = st.selectbox(
             "选择横轴",
@@ -86,6 +86,7 @@ with fig1_cho1:
         dict_axisx = {"全视图":"日期", "月视图":"相对月内日", "周视图":"相对星期天", "日视图":"相对时"}
         fig1_axisx = dict_axisx[fig1_axisx0]
 
+    # 显示条数
     if fig1_for0 != "总计":
         fig1_top_number = st.number_input(
             "显示条数",
@@ -94,6 +95,7 @@ with fig1_cho1:
             max_value=len(set(bill[fig1_for0].values)) 
         )
 
+# 金额项选择, 预备fig1_cho2
 if fig1_for0 == "总计":
     fig1_for = None
     fig1_tuple_axis2 = ("余额", "金额", "累计金额")
@@ -101,12 +103,13 @@ else:
     fig1_for = fig1_for0
     fig1_tuple_axis2 = ("金额", fig1_for+"累计金额")
 
-
 with fig1_cho2:
     fig1_axis2 = st.selectbox(
         "选择金额项",
         fig1_tuple_axis2
     )
+
+    # 仅直方图: 辅助显示的箱型图, 直方图的显示范围
     if fig1_plot == "直方图":
         fig31_marginal0 = st.selectbox(
             "分布辅助显示", 
@@ -134,9 +137,11 @@ with fig1_cho2:
     fig1cho2_cho3, fig1cho2_cho4 = st.columns(2)
     with fig1cho2_cho1:
         fig1_check0 = st.checkbox("仅支出", value=True)
+    
     if fig1_for0 != "总计":
         with fig1cho2_cho2:
             fig1_check_num = st.checkbox("金额排序（否则按数量）", value=True)
+        # 仅折线图且不为总计: 是否显示总的折线, 是否放缩显示
         if fig1_plot == "折线图":
             with fig1cho2_cho3:
                 fig1_check1 = st.checkbox("显示总余额")
@@ -156,10 +161,13 @@ with fig1_cho2:
 
 #%% 数据二次处理
 
+# 仅支出
 if fig1_check0:
     bill_fig1 = bill[bill["类型"] == "支出"]
 else:
     bill_fig1 = bill
+
+# 只保留前几条
 if fig1_for0 != "总计":
     if fig1_check_num:
         fig1_num_ref_index = bill_fig1.pivot_table(index=fig1_for, values="金额", aggfunc="sum").sort_values(by="金额", ascending=False).index.tolist()
@@ -169,6 +177,8 @@ if fig1_for0 != "总计":
     bill_fig1_basic = bill_fig1[bill_fig1[fig1_for].isin(fig1_num_ref_index[:fig1_top_number])]
 else:
     bill_fig1_basic = bill_fig1
+
+# 折线图放缩功能
 if fig1_plot == "折线图":
     if fig1_for0 != "总计":
         if fig1_check4:
@@ -244,5 +254,14 @@ elif fig1_plot == "直方图":
         nbins=fig31_nbins, 
         marginal=fig31_marginal
     )
-    fig1_hist.update_layout(template="seaborn")
+    fig1_hist.update_layout(template="ggplot2")
+    st.plotly_chart(fig1_hist, use_container_width=True)
+elif fig1_plot == "散点图":
+    fig1_hist = px.scatter(
+        bill_fig1_basic,
+        x=fig1_axisx,
+        y=fig1_axis2,
+        color=fig1_for,
+    )
+    fig1_hist.update_layout(template="ggplot2")
     st.plotly_chart(fig1_hist, use_container_width=True)
