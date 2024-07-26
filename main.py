@@ -10,6 +10,8 @@ import streamlit as st
 # 缺：增加鼠标悬浮显示
 # 缺：main改成上传excel，修正格式，并自动生成处理后xlsx
 
+# 缺：加入登录界面，and只有生成了之后才显示其它页面
+
 st.header("月账目分析报表")
 
 bill = pd.read_excel(r'F:\today\对账\bill_ok.xlsx')

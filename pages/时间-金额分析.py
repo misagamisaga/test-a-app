@@ -66,19 +66,19 @@ st.markdown("---")
 #%% 控件
 
 fig1_cho1, fig1_cho2 = st.columns(2)
+
 with fig1_cho1:
 
     fig1_plot = st.selectbox(
         "选择图表类型",
         ("折线图", "直方图", "散点图", "消费日历", "类别图")
     )
-    if fig1_plot != "消费日历":
-
+       
+    if fig1_plot not in ["消费日历", "类别图"]:
         fig1_for0 = st.selectbox(
             "选择查看项",
             ("总计", "项目", "分类", "商家")
         )
-        
         # 横轴选择
         if fig1_plot in ["直方图", "散点图"]:
             fig1_axisx0 = st.selectbox(
@@ -96,30 +96,71 @@ with fig1_cho1:
                 min_value=1,
                 max_value=len(set(bill[fig1_for0].values)) 
             )
-    else:
-        fig1_cal = st.selectbox(
-            "选择日历类型",
-            ("日 - 时", "日 (星期中) - 周", "日 (月中) - 月")
-        )
-        fig1_for0 = "总计"
-        cal_choose = st.selectbox(
-            "选择数据类型",
-            ("总价", "均价", "数量", "中位数", "众数", "最大值")
-        )
+    else:  # 消费日历or类别图
+        
+        if fig1_plot == "消费日历":
+            fig1_cal = st.selectbox(
+                "选择分析类型",
+                ("日 - 时", "日 (星期中) - 周", "日 (月中) - 月")
+            )
+            cal_choose = st.selectbox(
+                "选择数据类型",
+                ("总价", "均价", "数量", "中位数", "众数", "最大值")
+            )
+            fig1_for0 = "总计"
+        else:
+            fig14_plot = st.selectbox(
+                "选择具体图表类型",
+                ("饼图", "柱状图", "箱型图", "小提琴图")
+            )
+            fig1_cal = st.selectbox(
+                "选择分析类型",
+                ("日 - 时", "日 (星期中) - 周", "日 (月中) - 月")
+            )
+                
 
 # 金额项选择, 预备fig1_cho2
-if fig1_for0 == "总计":
-    fig1_for = None
-    fig1_tuple_axis2 = ("余额", "金额", "累计金额")
-else:
-    fig1_for = fig1_for0
-    fig1_tuple_axis2 = ("金额", fig1_for+"累计金额")
+if fig1_plot != "类别图":
+    if fig1_for0 == "总计":
+        fig1_for = None
+        fig1_tuple_axis2 = ("余额", "金额", "累计金额")
+    else:
+        fig1_for = fig1_for0
+        fig1_tuple_axis2 = ("金额", fig1_for+"累计金额")
 
 with fig1_cho2:
-    fig1_axis2 = st.selectbox(
-        "选择金额项",
-        fig1_tuple_axis2
-    )
+    if fig1_plot != "类别图":
+        fig1_axis2 = st.selectbox(
+            "选择金额项",
+            fig1_tuple_axis2
+        )
+
+    if fig1_plot == "类别图":
+        if fig14_plot == "柱状图":
+                fig1_for0 = st.selectbox(
+                    "选择查看项",
+                    ("总计", "项目", "分类", "商家")
+                )
+        else:
+            fig1_for0 = None
+        if fig14_plot in ["饼图", "柱状图"]:
+            # fig1_for0 = st.selectbox(
+            #     "选择查看项",
+            #     ("总计", "项目", "分类", "商家")
+            # )
+            fig14_for1 = st.selectbox(
+                "选择数据类型",
+                ("总价", "均价", "数量", "中位数", "众数", "最大值"), 
+                # key=1001
+            )
+        else:
+            fig14_points = st.selectbox(
+                "数据点显示",
+                ("all", "outliers", False)
+            )
+            # fig14_check_num = st.checkbox("金额排序（否则按数量）", value=True)
+    else:
+        fig14_plot = None    
 
     # 仅直方图: 辅助显示的箱型图, 直方图的显示范围
     if fig1_plot == "直方图":
@@ -151,8 +192,9 @@ with fig1_cho2:
         fig1_check0 = st.checkbox("仅支出", value=True)
     if fig1_plot != "消费日历":
         if fig1_for0 != "总计":
-            with fig1cho2_cho2:
-                fig1_check_num = st.checkbox("金额排序（否则按数量）", value=True)
+            if fig1_plot != "类别图":
+                with fig1cho2_cho2:
+                    fig1_check_num = st.checkbox("金额排序（否则按数量）", value=True)
             # 仅折线图且不为总计: 是否显示总的折线, 是否放缩显示
             if fig1_plot == "折线图":
                 with fig1cho2_cho3:
@@ -170,6 +212,9 @@ with fig1_cho2:
             fig1_check2 = False
             fig1_check3 = False
             fig1_check4 = False
+        with fig1cho2_cho2:
+            if fig14_plot in ["柱状图", "箱型图", "小提琴图"]:
+                fig14_hv = st.checkbox("横向绘图", value=True)
 
 
 #%% 数据二次处理
@@ -180,16 +225,53 @@ if fig1_check0:
 else:
     bill_fig1 = bill
 
-# 只保留前几条
-if fig1_for0 != "总计":
-    if fig1_check_num:
-        fig1_num_ref_index = bill_fig1.pivot_table(index=fig1_for, values="金额", aggfunc="sum").sort_values(by="金额", ascending=False).index.tolist()
+def get_mode(x):
+    return scipy.stats.mode(x)[0]
+dict_calender = {
+    "日 - 时":"时", 
+    "日 (星期中) - 周":"星期", 
+    "日 (月中) - 月":"日"
+}
+
+if fig14_plot == "饼图":
+    dict_proc = {"数量":"count", "总价":"sum", 
+                "均价":"mean", "中位数":"median", 
+                "众数":get_mode, "最大值":"max"}
+    # bill_fig1_pivot_temp = bill_fig1.copy()
+    # bill_fig1_pivot_temp.loc[:,"总计"] = "总计"
+    calender_input = dict_calender[fig1_cal]
+    df_plot = bill_fig1.pivot_table(
+        index=calender_input, values="金额", aggfunc=dict_proc[fig14_for1]
+    ).reset_index(inplace=False).sort_values(by="金额", ascending=False)
+elif fig14_plot == "柱状图":
+    # fig1_for0, ("总计", "项目", "分类", "商家")
+    dict_proc = {"数量":"count", "总价":"sum", 
+                "均价":"mean", "中位数":"median", 
+                "众数":get_mode, "最大值":"max"}
+    # bill_fig1_pivot_temp = bill_fig1.copy()
+    # bill_fig1_pivot_temp.loc[:,"总计"] = "总计"
+    calender_input = dict_calender[fig1_cal]
+    if fig1_for0 == "总计":
+        df_plot = bill_fig1.pivot_table(
+            index=calender_input, values="金额", aggfunc=dict_proc[fig14_for1]
+        ).reset_index(inplace=False)
     else:
-        fig1_num_ref_index = bill_fig1[fig1_for].value_counts().index.tolist()
-    
-    bill_fig1_basic = bill_fig1[bill_fig1[fig1_for].isin(fig1_num_ref_index[:fig1_top_number])]
-else:
-    bill_fig1_basic = bill_fig1
+        df_plot000 = bill_fig1.pivot_table(
+            index=calender_input, columns=fig1_for0, values="金额", aggfunc=dict_proc[fig14_for1]
+        ).fillna(0)
+        added_cols = df_plot000.columns.tolist()
+        df_plot = df_plot000.reset_index(inplace=False)
+# 只保留前几条
+if fig1_plot != "类别图":
+    if fig1_for0 != "总计":
+        if fig1_check_num:
+            fig1_num_ref_index = bill_fig1.pivot_table(index=fig1_for, values="金额", aggfunc="sum").sort_values(by="金额", ascending=False).index.tolist()
+        else:
+            fig1_num_ref_index = bill_fig1[fig1_for].value_counts().index.tolist()
+        
+        bill_fig1_basic = bill_fig1[bill_fig1[fig1_for].isin(fig1_num_ref_index[:fig1_top_number])]
+    else:
+        bill_fig1_basic = bill_fig1
 
 # 折线图放缩功能
 if fig1_plot == "折线图":
@@ -302,4 +384,31 @@ elif fig1_plot == "消费日历":
     fig1_heatmap.update_layout(template="ggplot2")
     st.plotly_chart(fig1_heatmap, use_container_width=True)
 elif fig1_plot == "类别图":
-    pass
+    if fig14_plot == "柱状图":
+        # fig1_for0
+        if fig1_for0 == "总计":
+            if fig14_hv:
+                fig2 = px.bar(df_plot, x="金额", y=calender_input, orientation='h')
+            else:
+                fig2 = px.bar(df_plot, x=calender_input, y="金额", orientation='v')
+        else:
+            if fig14_hv:
+                fig2 = px.bar(df_plot, x=added_cols, y=calender_input, orientation='h')
+            else:
+                fig2 = px.bar(df_plot, x=calender_input, y=added_cols, orientation='v')
+    elif fig14_plot == "饼图":
+        fig2 = px.pie(df_plot, values="金额", names=calender_input)
+    elif fig14_plot == "箱型图":
+        if fig14_hv:
+            fig2 = px.box(bill_fig1, x="金额", y=calender_input, points=fig14_points, orientation='h')
+        else:
+            fig2 = px.box(bill_fig1, x=calender_input, y="金额", points=fig14_points, orientation='v')
+        fig2.update_layout(template="ggplot2")
+    elif fig14_plot == "小提琴图":
+        if fig14_hv:
+            fig2 = px.violin(bill_fig1, x=calender_input[0], y=calender_input[1], points=fig14_points, orientation='h')
+        else:
+            fig2 = px.violin(bill_fig1, x=calender_input[1], y=calender_input[0], points=fig14_points, orientation='v')
+        fig2.update_layout(template="ggplot2")
+    # fig2.update_layout(template="presentation")
+    st.plotly_chart(fig2, use_container_width=True)
