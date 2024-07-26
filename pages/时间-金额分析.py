@@ -214,7 +214,7 @@ with fig1_cho2:
             fig1_check4 = False
         with fig1cho2_cho2:
             if fig14_plot in ["柱状图", "箱型图", "小提琴图"]:
-                fig14_hv = st.checkbox("横向绘图", value=True)
+                fig14_hv = st.checkbox("横向绘图", value=False)
 
 
 #%% 数据二次处理
@@ -232,14 +232,14 @@ dict_calender = {
     "日 (星期中) - 周":"星期", 
     "日 (月中) - 月":"日"
 }
-
+calender_input = dict_calender[fig1_cal]
 if fig14_plot == "饼图":
     dict_proc = {"数量":"count", "总价":"sum", 
                 "均价":"mean", "中位数":"median", 
                 "众数":get_mode, "最大值":"max"}
     # bill_fig1_pivot_temp = bill_fig1.copy()
     # bill_fig1_pivot_temp.loc[:,"总计"] = "总计"
-    calender_input = dict_calender[fig1_cal]
+    # calender_input = dict_calender[fig1_cal]
     df_plot = bill_fig1.pivot_table(
         index=calender_input, values="金额", aggfunc=dict_proc[fig14_for1]
     ).reset_index(inplace=False).sort_values(by="金额", ascending=False)
@@ -250,7 +250,7 @@ elif fig14_plot == "柱状图":
                 "众数":get_mode, "最大值":"max"}
     # bill_fig1_pivot_temp = bill_fig1.copy()
     # bill_fig1_pivot_temp.loc[:,"总计"] = "总计"
-    calender_input = dict_calender[fig1_cal]
+    # calender_input = dict_calender[fig1_cal]
     if fig1_for0 == "总计":
         df_plot = bill_fig1.pivot_table(
             index=calender_input, values="金额", aggfunc=dict_proc[fig14_for1]
@@ -400,15 +400,19 @@ elif fig1_plot == "类别图":
         fig2 = px.pie(df_plot, values="金额", names=calender_input)
     elif fig14_plot == "箱型图":
         if fig14_hv:
-            fig2 = px.box(bill_fig1, x="金额", y=calender_input, points=fig14_points, orientation='h')
+            fig2 = px.box(bill_fig1, x="金额", y=calender_input, points=fig14_points, 
+                          orientation='h', hover_data=['日期', '项目', '分类', '商家', '金额'])
         else:
-            fig2 = px.box(bill_fig1, x=calender_input, y="金额", points=fig14_points, orientation='v')
+            fig2 = px.box(bill_fig1, x=calender_input, y="金额", points=fig14_points, 
+                          orientation='v', hover_data=['日期', '项目', '分类', '商家', '金额'])
         fig2.update_layout(template="ggplot2")
     elif fig14_plot == "小提琴图":
         if fig14_hv:
-            fig2 = px.violin(bill_fig1, x=calender_input[0], y=calender_input[1], points=fig14_points, orientation='h')
+            fig2 = px.violin(bill_fig1, x="金额", y=calender_input, points=fig14_points, 
+                             orientation='h', hover_data=['日期', '项目', '分类', '商家', '金额'])
         else:
-            fig2 = px.violin(bill_fig1, x=calender_input[1], y=calender_input[0], points=fig14_points, orientation='v')
+            fig2 = px.violin(bill_fig1, x=calender_input, y="金额", points=fig14_points, 
+                             orientation='v', hover_data=['日期', '项目', '分类', '商家', '金额'])
         fig2.update_layout(template="ggplot2")
     # fig2.update_layout(template="presentation")
     st.plotly_chart(fig2, use_container_width=True)

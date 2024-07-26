@@ -189,15 +189,19 @@ elif fig1_plot == "饼图":
     fig2 = px.pie(df_plot, values='值', names=fig1_for0)
 elif fig1_plot == "箱型图":
     if fig1_hv:
-        fig2 = px.box(bill_fig31, x="金额", y=fig1_for0, points=fig1_points, orientation='h')
+        fig2 = px.box(bill_fig31, x="金额", y=fig1_for0, points=fig1_points, 
+                      orientation='h', hover_data=['日期', '项目', '分类', '商家', '金额'])
     else:
-        fig2 = px.box(bill_fig31, x=fig1_for0, y='金额', points=fig1_points, orientation='v')
+        fig2 = px.box(bill_fig31, x=fig1_for0, y='金额', points=fig1_points, 
+                      orientation='v', hover_data=['日期', '项目', '分类', '商家', '金额'])
     fig2.update_layout(template="ggplot2")
 elif fig1_plot == "小提琴图":
     if fig1_hv:
-        fig2 = px.violin(bill_fig31, x='金额', y=fig1_for0, points=fig1_points, orientation='h')
+        fig2 = px.violin(bill_fig31, x='金额', y=fig1_for0, points=fig1_points, 
+                         orientation='h', hover_data=['日期', '项目', '分类', '商家', '金额'])
     else:
-        fig2 = px.violin(bill_fig31, x=fig1_for0, y='金额', points=fig1_points, orientation='v')
+        fig2 = px.violin(bill_fig31, x=fig1_for0, y='金额', points=fig1_points, 
+                         orientation='v', hover_data=['日期', '项目', '分类', '商家', '金额'])
     fig2.update_layout(template="ggplot2")
 # fig2.update_layout(template="presentation")
 st.plotly_chart(fig2, use_container_width=True)
