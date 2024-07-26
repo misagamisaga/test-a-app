@@ -11,6 +11,11 @@ import plotly.graph_objects as go
 
 #%% 按照时间重整数据
 
+# 直方图 [日期/月日/周天/小时]
+# 散点图: [日期/周天/小时] - 金额, 可以染色
+# 类别图：以第几周、周几、小时为列类别
+
+
 # 使用缓存来加速网页
 @st.cache_data
 def get_data():
@@ -73,6 +78,14 @@ with fig1_cho1:
         ("总计", "项目", "分类", "商家")
     )
     
+    if fig1_plot in ["直方图", "散点图"]:
+        fig1_axisx0 = st.selectbox(
+            "选择横轴",
+            ("全视图", "月视图", "周视图", "日视图")
+        )
+        dict_axisx = {"全视图":"日期", "月视图":"相对月内日", "周视图":"相对星期天", "日视图":"相对时"}
+        fig1_axisx = dict_axisx[fig1_axisx0]
+
     if fig1_for0 != "总计":
         fig1_top_number = st.number_input(
             "显示条数",
@@ -95,13 +108,28 @@ with fig1_cho2:
         fig1_tuple_axis2
     )
     if fig1_plot == "直方图":
-        fig31_marginal = st.selectbox(
+        fig31_marginal0 = st.selectbox(
             "分布辅助显示", 
-            (None, "box", "violin", "rug")
+            ("无", "箱型图", "小提琴图", "线图")
         )
-        n_days_all = bill["相对日"].max()
-        bin_days = st.slider("分箱天数", min_value=1, max_value=n_days_all, value=7)
+        dict_marginal = {
+            "无":None, 
+            "箱型图":"box", 
+            "小提琴图":"violin", 
+            "线图":"rug"
+        }
+        fig31_marginal = dict_marginal[fig31_marginal0]
+
+        bindaysname_dict = {
+            "全视图":("分箱大小 (日）", bill["相对日"].max(), 2), 
+            "月视图":("分箱大小 (月内天数)", 30, 2),
+            "周视图":("分箱大小 (星期内天数)", 7, 1),
+            "日视图":("分箱大小 (小时)", 24, 2)
+        }
+        bin_days_name, n_days_all, bin_defalut = bindaysname_dict[fig1_axisx0]
+        bin_days = st.slider(bin_days_name, min_value=1, max_value=n_days_all, value=bin_defalut)
         fig31_nbins = math.ceil(n_days_all / bin_days)+1
+    
     fig1cho2_cho1, fig1cho2_cho2 = st.columns([1,2])
     fig1cho2_cho3, fig1cho2_cho4 = st.columns(2)
     with fig1cho2_cho1:
@@ -139,6 +167,8 @@ if fig1_for0 != "总计":
         fig1_num_ref_index = bill_fig1[fig1_for].value_counts().index.tolist()
     
     bill_fig1_basic = bill_fig1[bill_fig1[fig1_for].isin(fig1_num_ref_index[:fig1_top_number])]
+else:
+    bill_fig1_basic = bill_fig1
 if fig1_plot == "折线图":
     if fig1_for0 != "总计":
         if fig1_check4:
@@ -208,9 +238,9 @@ if fig1_plot == "折线图":
 elif fig1_plot == "直方图":
     fig1_hist = px.histogram(
         bill_fig1_basic,
-        x="日期",
+        x=fig1_axisx,
         y=fig1_axis2,
-        color=fig1_for0,
+        color=fig1_for,
         nbins=fig31_nbins, 
         marginal=fig31_marginal
     )
