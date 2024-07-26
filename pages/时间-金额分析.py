@@ -232,8 +232,10 @@ dict_calender = {
     "日 (星期中) - 周":"星期", 
     "日 (月中) - 月":"日"
 }
+
 if fig1_plot == "类别图":
     calender_input = dict_calender[fig1_cal]
+
 if fig14_plot == "饼图":
     dict_proc = {"数量":"count", "总价":"sum", 
                 "均价":"mean", "中位数":"median", 
