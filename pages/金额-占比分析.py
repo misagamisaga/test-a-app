@@ -60,6 +60,9 @@ for item in set(bill[col].values):
 
 st.markdown("---")
 
+#%% 直方图
+
+
 #%% 控件
 
 fig1_cho1, fig1_cho2 = st.columns(2)
