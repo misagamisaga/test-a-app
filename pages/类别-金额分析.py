@@ -15,7 +15,12 @@ import plotly.graph_objects as go
 
 #%% 按照时间重整数据
 
-bill_ori = pd.read_excel('bill_ok_proc.xlsx')
+# 使用缓存来加速网页
+@st.cache_data
+def get_data():
+    return pd.read_excel('bill_ok_proc.xlsx')
+
+bill_ori = get_data()
 
 fig_header_col1, fig_header_col2 = st.columns([3,2])
 with fig_header_col1:
