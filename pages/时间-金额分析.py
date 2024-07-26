@@ -227,6 +227,7 @@ else:
 
 def get_mode(x):
     return scipy.stats.mode(x)[0]
+
 dict_calender = {
     "日 - 时":"时", 
     "日 (星期中) - 周":"星期", 
