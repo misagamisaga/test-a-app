@@ -10,10 +10,11 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 
+st.set_page_config(layout="centered")
+
 #%% 按照时间重整数据
 
 # 类别图：以第几周、周几、小时为列类别
-
 
 # 使用缓存来加速网页
 @st.cache_data
@@ -29,22 +30,21 @@ with fig_header_col2:
     date_choose = st.date_input(
         label = "选择分析日期",
         value = (
-            datetime.date(2024, 6, 30), 
-            datetime.date(2024, 7, 25)
+            bill_ori["日期"].min().date(), 
+            bill_ori["日期"].max().date()
         ),
-        min_value = datetime.date(2024, 6, 30),
-        max_value = datetime.date(2024, 7, 25),
+        min_value = bill_ori["日期"].min().date(), 
+        max_value = bill_ori["日期"].max().date(), 
         format="YYYY.MM.DD",
     )
 
-# st.write(date_choose)
-
 date_min_choose = pd.Timestamp(date_choose[0])
-date_max_choose = pd.Timestamp(date_choose[1])
+date_max_choose = pd.Timestamp(date_choose[1]) + pd.Timedelta(days=1)
 
-bill = bill_ori[(bill_ori['日期'] >= date_min_choose) & (bill_ori['日期'] <= date_max_choose)]
+bill = bill_ori[(bill_ori['日期'] >= date_min_choose) & (bill_ori['日期'] < date_max_choose)]
 bill.loc[:,"相对日"] = bill["相对日"] - bill["相对日"].min()
 bill = bill.sort_values(by="日期", ascending=True)
+
 
 for col in ['项目', '分类', '商家']:
     name_add_now = col + "累计金额"
@@ -103,10 +103,6 @@ with fig1_cho1:
                 "选择分析类型",
                 ("日 - 时", "日 (星期中) - 周", "日 (月中) - 月")
             )
-            cal_choose = st.selectbox(
-                "选择数据类型",
-                ("总价", "均价", "数量", "中位数", "众数", "最大值")
-            )
             fig1_for0 = "总计"
         else:
             fig14_plot = st.selectbox(
@@ -129,7 +125,12 @@ if fig1_plot != "类别图":
         fig1_tuple_axis2 = ("金额", fig1_for+"累计金额")
 
 with fig1_cho2:
-    if fig1_plot != "类别图":
+    if fig1_plot == "消费日历":
+        cal_choose = st.selectbox(
+            "选择数据类型",
+            ("总价", "均价", "数量", "中位数", "众数", "最大值")
+        )
+    if fig1_plot not in ["消费日历", "类别图"]:
         fig1_axis2 = st.selectbox(
             "选择金额项",
             fig1_tuple_axis2
@@ -361,10 +362,13 @@ elif fig1_plot == "散点图":
         x=fig1_axisx,
         y=fig1_axis2,
         color=fig1_for,
+        hover_data=['日期', '项目', '分类', '商家', '金额']
     )
     fig1_hist.update_layout(template="ggplot2")
     st.plotly_chart(fig1_hist, use_container_width=True)
 elif fig1_plot == "消费日历":
+    st.markdown("  ")
+    st.markdown("  ")
     dict_calender = {
         "日 - 时":("时", "相对日"), 
         "日 (星期中) - 周":("星期", "周"), 
@@ -381,6 +385,8 @@ elif fig1_plot == "消费日历":
         values='金额', index=calender_input[1], 
         columns=calender_input[0], aggfunc=dict_proc[cal_choose]
     ).fillna(0)
+    if calender_input[0] == "星期":
+        calender_df = calender_df[["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]]
     fig1_heatmap = px.imshow(
         calender_df
     )
@@ -402,6 +408,9 @@ elif fig1_plot == "类别图":
                 fig2 = px.bar(df_plot, x=calender_input, y=added_cols, orientation='v')
     elif fig14_plot == "饼图":
         fig2 = px.pie(df_plot, values="金额", names=calender_input)
+        fig2.update_traces(
+            textinfo='label+value+percent'
+        )
     elif fig14_plot == "箱型图":
         if fig14_hv:
             fig2 = px.box(bill_fig1, x="金额", y=calender_input, points=fig14_points, 

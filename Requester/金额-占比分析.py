@@ -9,6 +9,9 @@ import datetime
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+import warnings
+
+warnings.filterwarnings("ignore")
 # import plotly.figure_factory as ff
 
 # 要有两个图，一个是散点/直方图，一个是饼图类的
@@ -16,6 +19,8 @@ import plotly.graph_objects as go
 # 然后给一个范围控件，控制大中小的百分比
 # 然后处理一下数据
 # 然后标注好贵/不贵的标签，然后画图
+
+st.set_page_config(layout="centered")
 
 #%% 按照时间重整数据
 
@@ -28,25 +33,25 @@ bill_ori = get_data()
 
 fig_header_col1, fig_header_col2 = st.columns([3,2])
 with fig_header_col1:
-    st.header("类别-金额分析")
+    st.header("金额-占比分析")
 with fig_header_col2:
     date_choose = st.date_input(
         label = "选择分析日期",
         value = (
-            datetime.date(2024, 6, 30), 
-            datetime.date(2024, 7, 25)
+            bill_ori["日期"].min().date(), 
+            bill_ori["日期"].max().date()
         ),
-        min_value = datetime.date(2024, 6, 30),
-        max_value = datetime.date(2024, 7, 25),
+        min_value = bill_ori["日期"].min().date(), 
+        max_value = bill_ori["日期"].max().date(), 
         format="YYYY.MM.DD",
     )
 
 # st.write(date_choose)
 
 date_min_choose = pd.Timestamp(date_choose[0])
-date_max_choose = pd.Timestamp(date_choose[1])
+date_max_choose = pd.Timestamp(date_choose[1]) + pd.Timedelta(days=1)
 
-bill = bill_ori[(bill_ori['日期'] >= date_min_choose) & (bill_ori['日期'] <= date_max_choose)]
+bill = bill_ori[(bill_ori['日期'] >= date_min_choose) & (bill_ori['日期'] < date_max_choose)]
 bill.loc[:,"相对日"] = bill["相对日"] - bill["相对日"].min()
 bill = bill.sort_values(by="日期", ascending=True)
 
@@ -78,7 +83,7 @@ with fig31_cho1:
             "分布辅助显示", 
             (None, "box", "violin", "rug")
         )
-        fig31_check0 = st.checkbox("仅支出")
+        fig31_check0 = st.checkbox("仅支出", value=True)
         if fig31_check0:
             bill_fig31 = bill[bill["类型"] == "支出"]
         else:
@@ -86,7 +91,7 @@ with fig31_cho1:
     
 with fig31_cho2:
     fig31_yuan = st.number_input(
-        "直方图精细度 (元)", min_value=1, max_value=1000, value=10
+        "直方图精细度 (元)", min_value=1, max_value=1000, value=5
     )
     fig31_numrange = st.slider(
         label="绘图范围", 
@@ -110,12 +115,13 @@ st.plotly_chart(fig31, use_container_width=True)
 
 #%% 定义便宜-中-贵
 st.markdown("##### 请在此定义便宜 - 一般 - 贵的价格范围, 然后进入后续分析")
-temp_col1, temp_col2 = st.columns([2,29])
+temp_col1, temp_col2 = st.columns([1.3, 20])
 with temp_col1:
     st.write("")
 with temp_col2:
     mid_money = st.slider(
-        label="",
+        label="None",
+        label_visibility='hidden', 
         min_value=fig31_numrange[0], 
         max_value=fig31_numrange[1], 
         value = (
@@ -187,6 +193,9 @@ if fig1_plot == "柱状图":
         fig2 = px.bar(df_plot, x=fig1_for0, y='值', orientation='v')
 elif fig1_plot == "饼图":
     fig2 = px.pie(df_plot, values='值', names=fig1_for0)
+    fig2.update_traces(
+        textinfo='label+value+percent'
+    )
 elif fig1_plot == "箱型图":
     if fig1_hv:
         fig2 = px.box(bill_fig31, x="金额", y=fig1_for0, points=fig1_points, 

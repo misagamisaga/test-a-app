@@ -89,6 +89,6 @@ if uploaded_ok:
     bill['余额'] = [money_left] + (bill['temp_amont'].cumsum() + money_left).tolist()[:-1]
     bill.sort_index(ascending=False)
     bill = bill.drop(["temp_amont"], axis=1)
-    bill.to_excel(r'F:\today\对账\bill_ok_proc.xlsx', index=False)
+    bill.to_excel('bill_ok_proc.xlsx', index=False)
 
     st.header("恭喜！现在你可以进行后面的分析了")

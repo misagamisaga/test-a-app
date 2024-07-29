@@ -101,7 +101,7 @@ def login():
         # st.write(users_info)
         user_name = st.text_input("用户名")
         user_mima = st.text_input("密码", type="password")
-        button_col1, button_col2, button_col3 = st.columns([1,7,1.1])
+        button_col1, button_col2, button_col3 = st.columns([1,7,0.8])
         with button_col1:
             submit_button1 = st.form_submit_button("登录")
         with button_col2:
@@ -145,24 +145,24 @@ settings = st.Page(
 admin_1 = st.Page(
     "Admin/分析文件生成.py",
     title="分析文件生成",
-    icon=":material/help:",  # 使用自带的icon图标
+    icon=":material/addchart:",  # 使用自带的Material icon shortcode来使用图标
     default=(st.session_state.role == "Admin"),  # 设置为该身份的默认页面
 )
 request_1 = st.Page(
     "Requester/时间-金额分析.py", 
     title="时间-金额分析", 
-    icon=":material/bug_report:", 
+    icon=":material/timeline:", 
     default=(st.session_state.role == "Requester"),
 )
 request_2 = st.Page(
     "Requester/类别-金额分析.py",
     title="类别-金额分析",
-    icon=":material/healing:",
+    icon=":material/equalizer:",
 )
 request_3 = st.Page(
     "Requester/金额-占比分析.py", 
     title="金额-占比分析", 
-    icon=":material/handyman:"
+    icon=":material/data_usage:",
 )
 
 # 将页面分组到列表中

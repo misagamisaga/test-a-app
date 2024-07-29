@@ -13,6 +13,8 @@ import plotly.graph_objects as go
 # 类别-金额分析（饼图、柱状图-(箱型图、扰动散点图、小提琴图)，笔数、总价、均价、中位数、众数、最大值）
 # 金额占比分析（分布直方图、柱状图、大中小金额的饼图，可选按类别切片）
 
+st.set_page_config(layout="centered")
+
 #%% 按照时间重整数据
 
 # 使用缓存来加速网页
@@ -29,20 +31,20 @@ with fig_header_col2:
     date_choose = st.date_input(
         label = "选择分析日期",
         value = (
-            datetime.date(2024, 6, 30), 
-            datetime.date(2024, 7, 25)
+            bill_ori["日期"].min().date(), 
+            bill_ori["日期"].max().date()
         ),
-        min_value = datetime.date(2024, 6, 30),
-        max_value = datetime.date(2024, 7, 25),
+        min_value = bill_ori["日期"].min().date(), 
+        max_value = bill_ori["日期"].max().date(), 
         format="YYYY.MM.DD",
     )
 
 # st.write(date_choose)
 
 date_min_choose = pd.Timestamp(date_choose[0])
-date_max_choose = pd.Timestamp(date_choose[1])
+date_max_choose = pd.Timestamp(date_choose[1]) + pd.Timedelta(days=1)
 
-bill = bill_ori[(bill_ori['日期'] >= date_min_choose) & (bill_ori['日期'] <= date_max_choose)]
+bill = bill_ori[(bill_ori['日期'] >= date_min_choose) & (bill_ori['日期'] < date_max_choose)]
 bill.loc[:,"相对日"] = bill["相对日"] - bill["相对日"].min()
 bill = bill.sort_values(by="日期", ascending=True)
 
@@ -135,6 +137,9 @@ if fig1_plot == "柱状图":
         fig2 = px.bar(df_plot, x=fig1_for0, y='金额', orientation='v')
 elif fig1_plot == "饼图":
     fig2 = px.pie(df_plot, values='金额', names=fig1_for0)
+    fig2.update_traces(
+        textinfo='label+value+percent'
+    )
 elif fig1_plot == "箱型图":
     if fig1_hv:
         fig2 = px.box(bill_fig2_basic, x="金额", y=fig1_for0, points=fig1_points, 
