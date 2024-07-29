@@ -101,13 +101,13 @@ def login():
         # st.write(users_info)
         user_name = st.text_input("用户名")
         user_mima = st.text_input("密码", type="password")
-        button_col1, button_col2, button_col3 = st.columns([1,7,0.8])
+        button_col1, button_col2, button_col3 = st.columns([1,7,1])
         with button_col1:
             submit_button1 = st.form_submit_button("登录")
         with button_col2:
             submit_button2 = st.form_submit_button("忘记密码")
         with button_col3:
-            submit_button3 = st.form_submit_button("注册")
+            submit_button3 = st.form_submit_button("注册", use_container_width=True)
         
         if submit_button1:
             # log in
