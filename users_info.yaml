@@ -1,0 +1,21 @@
+fxp:
+  username: fxp
+  true_name: fxp
+  role: Requester
+  password: aa5984b937cd6386e189a0e8d7002d408c94360901f42be4492890ec0a90f54e
+  email: abc@xyz.com
+  phone_number: '1234567890'
+mwk:
+  username: mwk
+  true_name: mwk
+  role: Requester
+  password: 11850a3a5f6ad42637c7059a6539d8ae5a79087260b1bb1ac4eef4a0961b2680
+  email: abc@xyz.com
+  phone_number: '1234567890'
+myc:
+  username: myc
+  true_name: myc
+  role: Admin
+  password: ad3ae7665ea59f20b61a6307a5e07b5cdeac26900ecad43b16cec4324b8098b1
+  email: abc@xyz.com
+  phone_number: '1234567890'
